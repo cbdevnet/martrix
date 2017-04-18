@@ -117,6 +117,11 @@ int x11_init(config* cfg){
 	return 0;
 }
 
+int x11_render(config* cfg){
+	//TODO
+	return 0;
+}
+
 int x11_handle(config* cfg){
 	XEvent event;
 	char pressed_key;

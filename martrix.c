@@ -1,6 +1,7 @@
 #include <string.h>
 #include "martrix.h"
 #include "configuration.h"
+#include "network.h"
 #include "x11.h"
 
 #define max(a,b) (((a) > (b)) ? (a) : (b))
@@ -33,7 +34,7 @@ void xmartrix(config* cfg){
 		}
 
 		if(status){
-			//TODO re-render
+			x11_render(cfg);
 		}
 
 		XFlush(cfg->xres.display);
@@ -52,14 +53,11 @@ void xmartrix(config* cfg){
 		status = select(maxfd + 1, &read_fds, NULL, NULL, &tv);
 		if(status > 0){
 			if(FD_ISSET(cfg->network.fd, &read_fds)){
-				//TODO process artnet input
-				printf("ArtNet data\n");
-				
-				//request rerender
-				status = 1;
+				//process artnet input
+				status = network_handle(cfg);
 			}
 			else{
-				//X Event
+				//x11 event
 				status = 0;
 			}
 		}

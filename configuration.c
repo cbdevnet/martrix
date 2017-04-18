@@ -258,6 +258,9 @@ void config_free(config* cfg){
 	free(cfg->visualizer.types);
 
 	cfg->visualizer.num_types = 0;
+
+	free(cfg->network.universes);
+	cfg->network.num_universes = 0;
 	close(cfg->network.fd);
 	cfg->network.fd = -1;
 }

@@ -7,6 +7,70 @@
 #include <string.h>
 #include "network.h"
 
+#define ARTNET_BUFFER_LENGTH 1024
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+
+int network_handle(config* cfg){
+	int rv = 0;
+	uint8_t data[ARTNET_BUFFER_LENGTH];
+	size_t u;
+	ssize_t bytes_read;
+	artnet_header* hdr;
+	artnet_output_pkt* output;
+
+	do{
+		bytes_read = recvfrom(cfg->network.fd, &data, sizeof(data), MSG_DONTWAIT, NULL, NULL);
+
+		if(bytes_read > 0 && bytes_read > sizeof(artnet_header)){
+			//cast to header
+			hdr = (artnet_header*) data;
+
+			if(!memcmp(hdr->magic, "Art-Net\0", sizeof(hdr->magic))){
+				switch(hdr->opcode){
+					case OpDmx:
+						if(bytes_read > sizeof(artnet_header) + sizeof(artnet_output_pkt)){
+							//convert data
+							output = (artnet_output_pkt*) (data + sizeof(artnet_header));
+							output->length = be16toh(output->length);
+
+							printf("Sequence %u for net %u universe %u, %u bytes -> ", output->sequence, output->net, output->universe, output->length);
+							if(cfg->network.net == output->net && bytes_read == sizeof(artnet_header) + sizeof(artnet_output_pkt) + output->length){
+								//find matching universe
+								for(u = 0; u < cfg->network.num_universes; u++){
+									if(cfg->network.universes[u].ident == output->universe){
+										memcpy(cfg->network.universes[u].data, data + sizeof(artnet_header) + sizeof(artnet_output_pkt), min(512, output->length));
+										printf("accepted\n");
+										rv = 1;
+										break;
+									}
+								}
+								if(u == cfg->network.num_universes){
+									printf("ignored\n");
+								}
+							}
+							else{
+								printf("rejected\n");
+							}
+						}
+						else{
+							printf("Short read on ArtOutput packet\n");
+						}
+						break;
+					default:
+						printf("Unhandled ArtNet opcode %04X\n", hdr->opcode);
+						break;
+				}
+			}
+		}
+	} while(bytes_read >= 0);
+
+	if(bytes_read < 0 && errno != EAGAIN){
+		shutdown_requested = 1;
+		perror("recv");
+	}
+	return rv;
+}
+
 int network_listener(char* bindhost, char* port){
 	int fd = -1, status, yes = 1;
 	struct addrinfo hints;
