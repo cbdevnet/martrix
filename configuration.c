@@ -137,7 +137,7 @@ int config_read(char* path, config* cfg){
 				case map:
 					uarg = dimensions_first(current_line);
 					channel = dimensions_second(current_line);
-					if(!uarg || !channel || uarg >= cfg->visualizer.dim_x || channel >= cfg->visualizer.dim_y){
+					if(!uarg || !channel || uarg > cfg->visualizer.dim_x || channel > cfg->visualizer.dim_y){
 						printf("Tried to map invalid coordinates %zux%zu on grid %zux%zu\n", uarg, channel, cfg->visualizer.dim_x, cfg->visualizer.dim_y);
 						break;
 					}

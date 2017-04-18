@@ -39,11 +39,14 @@ A configuration file may consist of the following sections:
 		* `green` : Green color component
 		* `blue` : Blue color component
 		* `white` : Value for all three color components
-		* `strobe` : Unused
-		* `uv` : Unused
+		* `strobe` : Currently unused
+		* `uv` : Currently unused
 
 * One `[map]` section, containing lines of the format
 	* `<x>x<y> = <type name> <universe> <address>`, setting up the matrix contents
+
+Lines starting with a semicolon are treated as comments and ignored. There is currently no
+support for inline comments.
 
 ## Usage
 
