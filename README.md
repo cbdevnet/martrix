@@ -34,13 +34,14 @@ A configuration file may consist of the following sections:
 * One or more `[fixture <name>]` sections, specifying a fixture type with:
 	* `channels = <num channels>`: Specify the number of channels this fixture uses
 	* Any number of `<channel type> = <channel offset>` lines, where *channel type* is one of
-		* `dimmer` : Color multiplier
+		* `dimmer` : Color multiplier (always full if none is specified for a type)
 		* `red` : Red color component
 		* `green` : Green color component
 		* `blue` : Blue color component
 		* `white` : Value for all three color components
 		* `strobe` : Unused
 		* `uv` : Unused
+
 * One `[map]` section, containing lines of the format
 	* `<x>x<y> = <type name> <universe> <address>`, setting up the matrix contents
 
