@@ -3,6 +3,7 @@
 #include "configuration.h"
 #include "x11.h"
 
+#define max(a,b) (((a) > (b)) ? (a) : (b))
 volatile sig_atomic_t shutdown_requested = 0;
 
 void signal_handler(int signum){
@@ -15,9 +16,66 @@ int usage(char* fn){
 	return EXIT_FAILURE;
 }
 
+void xmartrix(config* cfg){
+	fd_set read_fds;
+	struct timeval tv;
+	size_t u;
+	int maxfd, status = 0;
+
+	while(!shutdown_requested){
+		while(XPending(cfg->xres.display)){
+			status |= x11_handle(cfg);
+		}
+
+		//abort requested by window
+		if(shutdown_requested){
+			break;
+		}
+
+		if(status){
+			//TODO re-render
+		}
+
+		XFlush(cfg->xres.display);
+
+		FD_ZERO(&read_fds);
+		tv.tv_sec = 0;
+		tv.tv_usec = 1000;
+
+		maxfd = cfg->network.fd;
+		FD_SET(cfg->network.fd, &read_fds);
+		for(u = 0; u < cfg->xres.fds.size; u++){
+			FD_SET(cfg->xres.fds.fds[u], &read_fds);
+			maxfd = max(maxfd, cfg->xres.fds.fds[u]);
+		}
+
+		status = select(maxfd + 1, &read_fds, NULL, NULL, &tv);
+		if(status > 0){
+			if(FD_ISSET(cfg->network.fd, &read_fds)){
+				//TODO process artnet input
+				printf("ArtNet data\n");
+				
+				//request rerender
+				status = 1;
+			}
+			else{
+				//X Event
+				status = 0;
+			}
+		}
+		else if(status == 0){
+			//timeout
+		}
+		else{
+			perror("select");
+			break;
+		}
+	}
+}
+
 int main(int argc, char** argv){
 	config conf = {
-		.listener = -1
+		.network.fd = -1
 	};
 	char* config_file = "martrix.cfg";
 	if(argc > 1){
@@ -41,7 +99,8 @@ int main(int argc, char** argv){
 		return usage(argv[0]);
 	}
 
-	//TODO run core loop
+	//run core loop
+	xmartrix(&conf);
 
 	//cleanup x11
 	x11_cleanup(&conf);

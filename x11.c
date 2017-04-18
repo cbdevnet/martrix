@@ -117,6 +117,46 @@ int x11_init(config* cfg){
 	return 0;
 }
 
+int x11_handle(config* cfg){
+	XEvent event;
+	char pressed_key;
+
+	XNextEvent(cfg->xres.display, &event);
+
+	switch(event.type){
+		case ConfigureNotify:
+			cfg->xres.width = event.xconfigure.width;
+			cfg->xres.height = event.xconfigure.height;
+			return 1;
+		case Expose:
+			return 1;
+		case KeyPress:
+			//translate key event into a character, respecting keyboard layout
+			if(XLookupString(&event.xkey, &pressed_key, 1, NULL, NULL) != 1){
+				//disregard combined characters / bound strings
+				return 0;
+			}
+			switch(pressed_key){
+				case 'q':
+					shutdown_requested = 1;
+					return 0;
+				case 'r':
+					fprintf(stderr, "Redrawing on request\n");
+					return 1;
+			}
+			return 0;
+		case ClientMessage:
+			if(event.xclient.data.l[0] == cfg->xres.wm_delete){
+				fprintf(stderr, "Closing down window\n");
+				shutdown_requested = 1;
+			}
+			return 0;
+	}
+
+	printf("Unhandled X11 message\n");
+	return 0;
+}
+
 void x11_cleanup(config* cfg){
 	if(!cfg->xres.display){
 		return;

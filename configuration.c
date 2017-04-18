@@ -15,16 +15,17 @@ static unsigned dimensions_second(char* dims){
 	return strtoul(strchr(dims, 'x') + 1, NULL, 10);
 }
 
+//FIXME this function is really ugly
 int config_read(char* path, config* cfg){
 	enum {
 		none,
 		martrix,
-		fixture,
+		ftype,
 		map
 	} parser_state = none;
 	size_t current_ftype = 0, field_separator = 0;
 	char* map_target;
-	unsigned uarg, channel;
+	size_t uarg, channel;
 	size_t current_line_allocated = 0;
 	char* current_line = NULL;
 	ssize_t status;
@@ -56,7 +57,7 @@ int config_read(char* path, config* cfg){
 				parser_state = martrix;
 			}
 			else if(!strncmp(current_line, "[fixture ", 9)){
-				parser_state = fixture;
+				parser_state = ftype;
 
 				//new fixture entry
 				cfg->visualizer.types = realloc(cfg->visualizer.types, (cfg->visualizer.num_types + 1) * sizeof(fixture_type));
@@ -101,15 +102,15 @@ int config_read(char* path, config* cfg){
 				case martrix:
 					//bind host
 					if(!strncmp(current_line, "bindhost", 8)){
-						cfg->listener = network_listener(current_line + field_separator, "6454");
-						if(cfg->listener < 0){
+						cfg->network.fd = network_listener(current_line + field_separator, "6454");
+						if(cfg->network.fd < 0){
 							printf("Failed to open ArtNet listener\n");
 							return -1;
 						}
 					}
 					//net
 					else if(!strncmp(current_line, "net", 3)){
-						cfg->visualizer.net = strtoul(current_line + field_separator, NULL, 10);
+						cfg->network.net = strtoul(current_line + field_separator, NULL, 10);
 					}
 					//window dimensions
 					else if(!strncmp(current_line, "window", 6)){
@@ -127,13 +128,17 @@ int config_read(char* path, config* cfg){
 						}
 
 						cfg->visualizer.fixtures = calloc(cfg->visualizer.dim_x * cfg->visualizer.dim_y, sizeof(fixture));
+						if(!cfg->visualizer.fixtures){
+							printf("Failed to allocate memory\n");
+							return 1;
+						}
 					}
 					break;
 				case map:
 					uarg = dimensions_first(current_line);
 					channel = dimensions_second(current_line);
 					if(!uarg || !channel || uarg >= cfg->visualizer.dim_x || channel >= cfg->visualizer.dim_y){
-						printf("Tried to map invalid coordinates %ux%u on grid %zux%zu\n", uarg, channel, cfg->visualizer.dim_x, cfg->visualizer.dim_y);
+						printf("Tried to map invalid coordinates %zux%zu on grid %zux%zu\n", uarg, channel, cfg->visualizer.dim_x, cfg->visualizer.dim_y);
 						break;
 					}
 
@@ -160,7 +165,7 @@ int config_read(char* path, config* cfg){
 							cfg->visualizer.fixtures[uarg].addr = strtoul(map_target, &map_target, 10);
 							cfg->visualizer.fixtures[uarg].type = current_ftype;
 							cfg->visualizer.fixtures[uarg].alive = true;
-							printf("Mapped %s at %u\n", cfg->visualizer.types[current_ftype].name, uarg);
+							printf("Mapped %s at %zu\n", cfg->visualizer.types[current_ftype].name, uarg);
 							break;
 						}
 					}
@@ -169,7 +174,7 @@ int config_read(char* path, config* cfg){
 						printf("Unknown type %s\n", map_target);
 					}
 					break;
-				case fixture:
+				case ftype:
 					//convert arg
 					uarg = strtoul(current_line + field_separator, NULL, 10);
 					//channel count or channel mapping
@@ -207,6 +212,32 @@ int config_read(char* path, config* cfg){
 		}
 	}
 
+	//allocate necessary universes
+	for(uarg = 0; uarg < cfg->visualizer.dim_x * cfg->visualizer.dim_y; uarg++){
+		if(cfg->visualizer.fixtures[uarg].alive){
+			//check if universe for that fixture already allocated
+			for(channel = 0; channel < cfg->network.num_universes; channel++){
+				if(cfg->network.universes[channel].ident == cfg->visualizer.fixtures[uarg].universe){
+					break;
+				}
+			}
+
+			if(channel == cfg->network.num_universes){
+				//allocate new universe
+				cfg->network.universes = realloc(cfg->network.universes, (cfg->network.num_universes + 1) * sizeof(artnet_universe));
+				if(!cfg->network.universes){
+					printf("Failed to allocate memory\n");
+					return 1;
+				}
+
+				memset(cfg->network.universes + cfg->network.num_universes, 0, sizeof(artnet_universe));
+				cfg->network.universes[channel].ident = cfg->visualizer.fixtures[uarg].universe;
+				printf("Listening for data on universe %u\n", cfg->network.universes[channel].ident);
+				cfg->network.num_universes++;
+			}
+		}
+	}
+
 	free(current_line);
 	fclose(file);
 	return 0;
@@ -227,6 +258,6 @@ void config_free(config* cfg){
 	free(cfg->visualizer.types);
 
 	cfg->visualizer.num_types = 0;
-	close(cfg->listener);
-	cfg->listener = -1;
+	close(cfg->network.fd);
+	cfg->network.fd = -1;
 }

@@ -22,6 +22,8 @@ typedef enum /*_visualizer_channel*/ {
 	red,
 	green,
 	blue,
+	white,
+	uv,
 	channel_max
 } fixture_channel;
 
@@ -39,12 +41,23 @@ typedef struct /*_visualizer_fixture*/ {
 } fixture;
 
 typedef struct /*_visualizer*/ {
-	uint8_t net;
 	size_t dim_x, dim_y;
 	size_t num_types;
 	fixture_type* types;
 	fixture* fixtures;
 } martrix;
+
+typedef struct /*_artnet_universe*/ {
+	uint8_t data[512];
+	uint8_t ident;
+} artnet_universe;
+
+typedef struct /*_artnet_data*/ {
+	size_t num_universes;
+	artnet_universe* universes;
+	uint8_t net;
+	int fd;
+} artnet;
 
 typedef struct /*_x11_data*/ {
 	Display* display;
@@ -61,7 +74,7 @@ typedef struct /*_x11_data*/ {
 typedef struct /*_visualizer_config*/ {
 	martrix visualizer;
 	x11 xres;
+	artnet network;
 	struct timespec last_render;
-	int listener;
 } config;
 #endif

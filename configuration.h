@@ -8,5 +8,7 @@ static char* fixture_channel_name[channel_max] = {
 	[strobe] = "strobe",
 	[red] = "red",
 	[green] = "green",
-	[blue] = "blue"
+	[blue] = "blue",
+	[white] = "white",
+	[uv] = "uv"
 };
