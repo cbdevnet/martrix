@@ -10,6 +10,7 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/extensions/Xrender.h>
 #include "xfds.h"
 
 #define MARTRIX_VERSION "Martrix 0.1"
@@ -63,6 +64,7 @@ typedef struct /*_x11_data*/ {
 	Display* display;
 	int screen;
 	Window main;
+	Picture window_picture;
 	Colormap colormap;
 	XVisualInfo visual_info;
 	X_FDS fds;

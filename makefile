@@ -1,5 +1,5 @@
 CFLAGS ?= -g -Wall
-LDLIBS = -lX11
+LDLIBS = -lX11 -lXrender
 SOURCES = xfds.c configuration.c network.c x11.c
 
 OBJS = $(patsubst %.c,%.o,$(SOURCES))

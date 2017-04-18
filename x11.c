@@ -2,6 +2,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
+#include <X11/extensions/Xrender.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -12,6 +13,7 @@ int x11_init(config* cfg){
 	Atom wm_state_fullscreen;
 	XTextProperty window_name;
 	pid_t pid = getpid();
+	int xrender_major, xrender_minor;
 
 	//allocate some structures
 	XSizeHints* size_hints = XAllocSizeHints();
@@ -34,6 +36,8 @@ int x11_init(config* cfg){
 		return -1;
 	}
 
+	XRenderQueryVersion(cfg->xres.display, &xrender_major, &xrender_minor);
+	printf("Xrender version %d.%d\n", xrender_major, xrender_minor);
 	//XSynchronize(cfg->xres.display, True);
 
 	cfg->xres.screen = DefaultScreen(cfg->xres.display);
@@ -101,6 +105,8 @@ int x11_init(config* cfg){
 	cfg->xres.wm_delete = XInternAtom(cfg->xres.display, "WM_DELETE_WINDOW", False);
 	XSetWMProtocols(cfg->xres.display, cfg->xres.main, &(cfg->xres.wm_delete), 1);
 
+	cfg->xres.window_picture = XRenderCreatePicture(cfg->xres.display, cfg->xres.main, XRenderFindStandardFormat(cfg->xres.display, PictStandardARGB32), 0, 0);
+
 	//map window
 	XMapRaised(cfg->xres.display, cfg->xres.main);
 
@@ -118,7 +124,70 @@ int x11_init(config* cfg){
 }
 
 int x11_render(config* cfg){
-	//TODO
+	size_t u, j;
+	artnet_universe* universe;
+	fixture* fix;
+	float dimming_factor = 1.0;
+	XRenderColor color = {
+		.alpha = -1
+	};
+	unsigned x, y;
+	unsigned width = cfg->xres.width / cfg->visualizer.dim_x;
+	unsigned height = cfg->xres.height / cfg->visualizer.dim_y;
+
+	XClearWindow(cfg->xres.display, cfg->xres.main);
+
+	//draw single fixture
+	for(u = 0; u < cfg->visualizer.dim_x * cfg->visualizer.dim_y; u++){
+		fix = cfg->visualizer.fixtures + u;
+		if(fix->alive){
+			//calculate window coordinates
+			x = width * (u % cfg->visualizer.dim_x);
+			y = height * (u / cfg->visualizer.dim_x);
+
+			//find mapped universe
+			for(j = 0; j < cfg->network.num_universes; j++){
+				if(cfg->network.universes[j].ident == fix->universe){
+					universe = cfg->network.universes + j;
+					break;
+				}
+			}
+
+			//calculate color
+			color.red = color.green = color.blue = 0;
+			for(j = 0; j < cfg->visualizer.types[fix->type].channels; j++){
+				switch(cfg->visualizer.types[fix->type].map[j]){
+					case dimmer:
+						dimming_factor = universe->data[fix->addr + j] / 255.f;
+						break;
+					case red:
+						color.red += universe->data[fix->addr + j] << 8;
+						break;
+					case green:
+						color.green += universe->data[fix->addr + j] << 8;
+						break;
+					case blue:
+						color.blue += universe->data[fix->addr + j] << 8;
+						break;
+					case white:
+						color.red += universe->data[fix->addr + j] << 8;
+						color.green += universe->data[fix->addr + j] << 8;
+						color.blue += universe->data[fix->addr + j] << 8;
+						break;
+					default:
+						//ignore
+						break;
+				}
+			}
+
+			color.red *= dimming_factor;
+			color.green *= dimming_factor;
+			color.blue *= dimming_factor;
+
+			//draw
+			XRenderFillRectangle(cfg->xres.display, PictOpOver, cfg->xres.window_picture, &color, x, y, width, height);
+		}
+	}
 	return 0;
 }
 
