@@ -23,6 +23,7 @@ int config_read(char* path, config* cfg){
 		map
 	} parser_state = none;
 	size_t current_ftype = 0, field_separator = 0;
+	char* map_target;
 	unsigned uarg, channel;
 	size_t current_line_allocated = 0;
 	char* current_line = NULL;
@@ -132,11 +133,41 @@ int config_read(char* path, config* cfg){
 					uarg = dimensions_first(current_line);
 					channel = dimensions_second(current_line);
 					if(!uarg || !channel || uarg >= cfg->visualizer.dim_x || channel >= cfg->visualizer.dim_y){
-						printf("Tried to map invalid coordinates %ux%u on grid %zux%zu", uarg, channel, cfg->visualizer.dim_x, cfg->visualizer.dim_y);
+						printf("Tried to map invalid coordinates %ux%u on grid %zux%zu\n", uarg, channel, cfg->visualizer.dim_x, cfg->visualizer.dim_y);
+						break;
 					}
 
-					//map
-					//TODO
+					//calculate offset into fixture array
+					uarg += (channel - 1) * cfg->visualizer.dim_y - 1;
+
+					//find fixture type to map to
+					map_target = strtok(current_line + field_separator, " ");
+					for(current_ftype = 0; current_ftype < cfg->visualizer.num_types; current_ftype++){
+						if(!strcmp(cfg->visualizer.types[current_ftype].name, map_target)){
+							//get universe and address
+							map_target = strtok(NULL, " ");
+							if(!map_target){
+								printf("Incomplete mapping: %s\n", current_line);
+								return 1;
+							}
+							cfg->visualizer.fixtures[uarg].universe = strtoul(map_target, NULL, 10);
+
+							map_target = strtok(NULL, " ");
+							if(!map_target){
+								printf("Incomplete mapping: %s\n", current_line);
+								return 1;
+							}
+							cfg->visualizer.fixtures[uarg].addr = strtoul(map_target, &map_target, 10);
+							cfg->visualizer.fixtures[uarg].type = current_ftype;
+							cfg->visualizer.fixtures[uarg].alive = true;
+							printf("Mapped %s at %u\n", cfg->visualizer.types[current_ftype].name, uarg);
+							break;
+						}
+					}
+
+					if(current_ftype == cfg->visualizer.num_types){
+						printf("Unknown type %s\n", map_target);
+					}
 					break;
 				case fixture:
 					//convert arg
