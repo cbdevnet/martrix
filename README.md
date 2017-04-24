@@ -15,8 +15,8 @@ martrix uses the X11 Xrender extension and thus requires the following packages:
 
 ## Building
 
-Running `make` on a system with the prerequisites mentioned above should build
-`xmartrix`.
+Running `make` on a system with the prerequisites mentioned above should build the
+`martrix` binary.
 
 ## Configuration
 
