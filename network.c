@@ -73,15 +73,13 @@ int network_handle(config* cfg){
 
 int network_listener(char* bindhost, char* port){
 	int fd = -1, status, yes = 1;
-	struct addrinfo hints;
+	struct addrinfo hints = {
+		.ai_family = AF_UNSPEC,
+		.ai_socktype = SOCK_DGRAM,
+		.ai_flags = AI_PASSIVE
+	};
 	struct addrinfo* info;
 	struct addrinfo* addr_it;
-
-	memset(&hints, 0, sizeof(hints));
-
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_flags = AI_PASSIVE;
 
 	status = getaddrinfo(bindhost, port, &hints, &info);
 	if(status){
