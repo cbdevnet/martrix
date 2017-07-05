@@ -116,6 +116,7 @@ int config_read(char* path, config* cfg){
 					else if(!strncmp(current_line, "window", 6)){
 						cfg->xres.width = dimensions_first(current_line + field_separator);
 						cfg->xres.height = dimensions_second(current_line + field_separator);
+						cfg->xres.windowed = true;
 					}
 					//matrix dimensions
 					else if(!strncmp(current_line, "dimensions", 10)){
