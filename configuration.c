@@ -144,7 +144,7 @@ int config_read(char* path, config* cfg){
 					}
 
 					//calculate offset into fixture array
-					uarg += (channel - 1) * cfg->visualizer.dim_y - 1;
+					uarg += (channel - 1) * cfg->visualizer.dim_x - 1;
 
 					//find fixture type to map to
 					map_target = strtok(current_line + field_separator, " ");
