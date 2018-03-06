@@ -12,12 +12,13 @@ void signal_handler(int signum){
 }
 
 int usage(char* fn){
-	printf("%s - ArtNet Matrix visualizer", MARTRIX_VERSION);
-	//TODO
+	printf("martrix - Lighting grid/matrix visualizer\n");
+	printf("Controlled by input via sACN or ArtNet\n");
+	printf("Usage:\n\t%s <configfile>\n", fn);
 	return EXIT_FAILURE;
 }
 
-void xmartrix(config* cfg){
+void martrix(config_t* cfg){
 	fd_set read_fds;
 	struct timeval tv;
 	size_t u;
@@ -72,7 +73,7 @@ void xmartrix(config* cfg){
 }
 
 int main(int argc, char** argv){
-	config conf = {
+	config_t conf = {
 		.network.fd = -1
 	};
 	char* config_file = "martrix.cfg";
@@ -87,7 +88,7 @@ int main(int argc, char** argv){
 	printf("%s starting up\n", MARTRIX_VERSION);
 
 	//read configuration
-	if(config_read(config_file, &conf)){
+	if(config_read(&conf, config_file)){
 		return usage(argv[0]);
 	}
 
@@ -98,7 +99,7 @@ int main(int argc, char** argv){
 	}
 
 	//run core loop
-	xmartrix(&conf);
+	martrix(&conf);
 
 	//cleanup x11
 	x11_cleanup(&conf);

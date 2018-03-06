@@ -6,7 +6,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-int x11_init(config* cfg){
+int x11_init(config_t* cfg){
 	char* window_title = "xmartrix";
 	Window root;
 	XSetWindowAttributes window_attributes;
@@ -123,10 +123,10 @@ int x11_init(config* cfg){
 	return 0;
 }
 
-int x11_render(config* cfg){
+int x11_render(config_t* cfg){
 	size_t u, j;
-	artnet_universe* universe;
-	fixture* fix;
+	input_universe_t* universe;
+	fixture_t* fix;
 	float dimming_factor = 1.0;
 	XRenderColor color = {
 		.alpha = -1
@@ -191,7 +191,7 @@ int x11_render(config* cfg){
 	return 0;
 }
 
-int x11_handle(config* cfg){
+int x11_handle(config_t* cfg){
 	XEvent event;
 	char pressed_key;
 
@@ -231,7 +231,7 @@ int x11_handle(config* cfg){
 	return 0;
 }
 
-void x11_cleanup(config* cfg){
+void x11_cleanup(config_t* cfg){
 	if(!cfg->xres.display){
 		return;
 	}

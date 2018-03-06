@@ -10,7 +10,7 @@
 #define ARTNET_BUFFER_LENGTH 1024
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 
-int network_handle(config* cfg){
+int network_handle(config_t* cfg){
 	int rv = 0;
 	uint8_t data[ARTNET_BUFFER_LENGTH];
 	size_t u;

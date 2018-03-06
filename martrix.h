@@ -13,7 +13,7 @@
 #include <X11/extensions/Xrender.h>
 #include "xfds.h"
 
-#define MARTRIX_VERSION "Martrix 0.1"
+#define MARTRIX_VERSION "martrix 1.0"
 extern volatile sig_atomic_t shutdown_requested;
 
 typedef enum /*_visualizer_channel*/ {
@@ -26,39 +26,45 @@ typedef enum /*_visualizer_channel*/ {
 	white,
 	uv,
 	channel_max
-} fixture_channel;
+} fixture_channel_t;
 
 typedef struct /*_visualizer_fixture_type*/ {
 	char* name;
 	size_t channels;
-	fixture_channel* map;
-} fixture_type;
+	fixture_channel_t* map;
+} fixture_type_t;
 
 typedef struct /*_visualizer_fixture*/ {
 	bool alive;
 	size_t type;
 	uint8_t universe;
 	uint16_t addr;
-} fixture;
+} fixture_t;
 
 typedef struct /*_visualizer*/ {
 	size_t dim_x, dim_y;
 	size_t num_types;
-	fixture_type* types;
-	fixture* fixtures;
-} martrix;
+	fixture_type_t* types;
+	fixture_t* fixtures;
+} martrix_t;
 
 typedef struct /*_artnet_universe*/ {
 	uint8_t data[512];
-	uint8_t ident;
-} artnet_universe;
+	uint16_t ident;
+} input_universe_t;
 
-typedef struct /*_artnet_data*/ {
+typedef enum /*_martrix_data_input*/ {
+	input_artnet = 0,
+	input_sacn
+} input_type_t;
+
+typedef struct /*_input_data*/ {
 	size_t num_universes;
-	artnet_universe* universes;
+	input_universe_t* universes;
 	uint8_t net;
 	int fd;
-} artnet;
+	input_type_t type;
+} input_t;
 
 typedef struct /*_x11_data*/ {
 	Display* display;
@@ -71,12 +77,12 @@ typedef struct /*_x11_data*/ {
 	Atom wm_delete;
 	unsigned width, height;
 	bool windowed;
-} x11;
+} x11_data_t;
 
 typedef struct /*_visualizer_config*/ {
-	martrix visualizer;
-	x11 xres;
-	artnet network;
+	martrix_t visualizer;
+	x11_data_t xres;
+	input_t network;
 	struct timespec last_render;
-} config;
+} config_t;
 #endif

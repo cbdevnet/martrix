@@ -1,9 +1,9 @@
 # martrix
-martrix is an ArtNet RGB matrix visualizer
+martrix is an ArtNet/sACN RGB matrix grid visualizer
 
 It can be used to plan shows or to create an interesting fixture using a
-standard computer projector. Data input is accepted via ArtNet, which
-is output by most lighting desks and software.
+standard computer projector. Data input is accepted via ArtNet or sACN,
+either of which is output by most lighting desks and software.
 
 ## Build prerequisites
 
@@ -27,9 +27,10 @@ very similar to the popular *ini* file format. An example can be found in
 A configuration file may consist of the following sections:
 
 * One `[martrix]` section, containing
-	* `bindhost = <bindhost>`: The interface to listen on for ArtNet data
+	* `bindhost = <bindhost>`: The interface address to listen for input data
+	* `input = <type>`: Can either be `artnet` or `sacn`, default is `artnet`
 	* `dimensions = <x>x<y>`: The dimensions of the visualizer grid
-	* `net = <artnet net id>`: The ArtNet network number to listen for
+	* `net = <artnet net id>`: The ArtNet network number to listen for, ignored with sACN
 	* `window = <x>x<y>`: Dimensions of the window to create - fullscreen if omitted
 * One or more `[fixture <name>]` sections, specifying a fixture type with:
 	* `channels = <num channels>`: Specify the number of channels this fixture uses
