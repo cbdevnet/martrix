@@ -71,7 +71,7 @@ int network_handle(config_t* cfg){
 	return rv;
 }
 
-int network_listener(char* bindhost, char* port){
+static int network_listener(char* bindhost, char* port){
 	int fd = -1, status, yes = 1;
 	struct addrinfo hints = {
 		.ai_family = AF_UNSPEC,
@@ -119,4 +119,22 @@ int network_listener(char* bindhost, char* port){
 		return -1;
 	}
 	return fd;
+}
+
+int network_start(config_t* cfg){
+	char* listen_port = (cfg->network.type == input_sacn) ? SACN_DEFAULT_PORT : ARTNET_DEFAULT_PORT;
+	char* listen_host = cfg->network.bindhost;
+
+	if(strchr(listen_host, ' ')){
+		listen_port = strchr(listen_host, ' ');
+		*listen_port++ = 0;
+	}
+
+	cfg->network.fd = network_listener(listen_host, listen_port);
+	if(cfg->network.fd < 0){
+		printf("Failed to open data input listener\n");
+		return -1;
+	}
+
+	return 0;
 }

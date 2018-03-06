@@ -62,8 +62,9 @@ typedef struct /*_input_data*/ {
 	size_t num_universes;
 	input_universe_t* universes;
 	uint8_t net;
-	int fd;
 	input_type_t type;
+	char* bindhost;
+	int fd;
 } input_t;
 
 typedef struct /*_x11_data*/ {

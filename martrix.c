@@ -92,6 +92,11 @@ int main(int argc, char** argv){
 		return usage(argv[0]);
 	}
 
+	//start network listeners
+	if(network_start(&conf)){
+		return usage(argv[0]);
+	}
+
 	//initialize x11
 	if(x11_init(&conf)){
 		config_free(&conf);

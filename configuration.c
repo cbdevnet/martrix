@@ -1,7 +1,6 @@
 #include <unistd.h>
 #include <string.h>
 #include "configuration.h"
-#include "network.h"
 
 static enum {
 	config_none,
@@ -68,13 +67,12 @@ static int config_line(config_t* cfg, char* option, char* value){
 			break;
 		case config_martrix:
 			//bind host
-			//TODO this needs to be protocol-aware
 			if(!strncmp(option, "bindhost", 8)){
-				cfg->network.fd = network_listener(value, "6454");
-				if(cfg->network.fd < 0){
-					printf("Failed to open network input listener\n");
+				if(cfg->network.bindhost){
+					fprintf(stderr, "Bindhost already specified, aborting\n");
 					return -1;
 				}
+				cfg->network.bindhost = strdup(value);
 			}
 			//artnet net
 			else if(!strncmp(option, "net", 3)){
@@ -300,4 +298,5 @@ void config_free(config_t* cfg){
 	cfg->network.num_universes = 0;
 	close(cfg->network.fd);
 	cfg->network.fd = -1;
+	free(cfg->network.bindhost);
 }
