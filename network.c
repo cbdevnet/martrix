@@ -124,6 +124,11 @@ static int network_listener(char* bindhost, char* port){
 int network_start(config_t* cfg){
 	char* listen_port = (cfg->network.type == input_sacn) ? SACN_DEFAULT_PORT : ARTNET_DEFAULT_PORT;
 	char* listen_host = cfg->network.bindhost;
+	size_t u;
+
+	struct ip_mreq mcast_req = {
+		.imr_interface = { INADDR_ANY }
+	};
 
 	if(strchr(listen_host, ' ')){
 		listen_port = strchr(listen_host, ' ');
@@ -134,6 +139,16 @@ int network_start(config_t* cfg){
 	if(cfg->network.fd < 0){
 		printf("Failed to open data input listener\n");
 		return -1;
+	}
+
+	//for sacn, join the multicast groups
+	if(cfg->network.type == input_sacn){
+		for(u = 0; u < cfg->network.num_universes; u++){
+			mcast_req.imr_multiaddr.s_addr = htobe32(0xefff0000 | ((uint32_t) cfg->network.universes[u].ident));
+			if(setsockopt(cfg->network.fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mcast_req, sizeof(mcast_req))){
+				printf("Failed to join sACN universe multicast group for universe %u: %s\n", cfg->network.universes[u].ident, strerror(errno));
+			}
+		}
 	}
 
 	return 0;

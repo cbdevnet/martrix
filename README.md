@@ -55,3 +55,13 @@ Run `./martrix` to start the visualizer. The first and only accepted parameter
 specifies a configuration file to read. If none is given, `martrix.cfg` is read
 by default.
 
+## Debugging
+
+Errors are displayed on the standard output.
+
+Note that when using multicast sACN input, all networking devices in the path are required
+to support at least IGMPv2. `martrix` tries to join the universe multicast groups for all active
+universes. The Linux kernel places a limit on the number of group memberships an interface may have,
+which is usually 20. This limit can be changed using the kernel parameter `/proc/sys/net/ipv4/igmp_max_memberships`.
+
+sACN input via unicast is not limited by this parameter.
