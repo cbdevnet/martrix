@@ -7,59 +7,125 @@
 #include <string.h>
 #include "network.h"
 
-#define ARTNET_BUFFER_LENGTH 1024
 #define min(a,b) (((a) < (b)) ? (a) : (b))
+
+static int network_handle_sacn(config_t* cfg, uint8_t* data, size_t len){
+	sacn_header* hdr = (sacn_header*) data;
+	sacn_data* frame = NULL;
+	size_t u;
+
+	if(len > sizeof(sacn_header)){
+		frame = (sacn_data*) (data + sizeof(sacn_header));
+		if(!memcmp(hdr->magic, SACN_MAGIC, sizeof(hdr->magic))){
+			if(len > sizeof(sacn_header) + sizeof(sacn_data)
+					&& be16toh(hdr->preamble) == 0x10
+					&& hdr->postamble == 0
+					&& be32toh(hdr->vector) == SACN_ROOT_DATA
+					&& be32toh(hdr->frame_vector) == SACN_FRAME_DATA
+					&& frame->vector == SACN_DMP_SET
+					&& frame->format == 0xA1
+					&& frame->startcode_offset == 0
+					&& be16toh(frame->address_increment) == 1
+					&& be16toh(frame->channels <= 513
+					&& be16toh(frame->channels) >= 1)){
+
+				//FIXME source priority is currently ignored, could be used to mux
+				//FIXME sacn synchronization currently ignored
+
+				//terminate source name
+				frame->source_name[63] = 0;
+				printf("Sequence %u from %s for universe %u, %u channels ->", frame->sequence, frame->source_name, be16toh(frame->universe), be16toh(frame->channels) - 1);
+				if(len == sizeof(sacn_header) + sizeof(sacn_data) + be16toh(frame->channels)){
+					for(u = 0; u < cfg->network.num_universes; u++){
+						if(cfg->network.universes[u].ident == be16toh(frame->universe)){
+							memcpy(cfg->network.universes[u].data, data + sizeof(sacn_header) + sizeof(sacn_data) + 1, be16toh(frame->channels) - 1);
+							printf("accepted\n");
+							return 0;
+						}
+					}
+
+					if(u == cfg->network.num_universes){
+						printf("ignored\n");
+					}
+				}
+				else{
+					printf("rejected\n");
+				}
+			}
+			else{
+				printf("Malformed sACN packet received\n");
+			}
+		}
+	}
+
+	return 1;
+}
+
+static int network_handle_artnet(config_t* cfg, uint8_t* data, size_t len){
+	artnet_header* hdr = (artnet_header*) data;
+	artnet_output_pkt* output = NULL;
+	size_t u;
+
+	if(len > sizeof(artnet_header)){
+		if(!memcmp(hdr->magic, ARTNET_MAGIC, sizeof(hdr->magic))){
+			switch(hdr->opcode){
+				case OpDmx:
+					if(len > sizeof(artnet_header) + sizeof(artnet_output_pkt)){
+						//convert data
+						output = (artnet_output_pkt*) (data + sizeof(artnet_header));
+						output->length = be16toh(output->length);
+
+						printf("Sequence %u for net %u universe %u, %u bytes -> ", output->sequence, output->net, output->universe, output->length);
+						if(cfg->network.net == output->net && len == sizeof(artnet_header) + sizeof(artnet_output_pkt) + output->length){
+							//find matching universe
+							for(u = 0; u < cfg->network.num_universes; u++){
+								if(cfg->network.universes[u].ident == output->universe){
+									memcpy(cfg->network.universes[u].data, data + sizeof(artnet_header) + sizeof(artnet_output_pkt), min(512, output->length));
+									printf("accepted\n");
+									return 0;
+								}
+							}
+
+							if(u == cfg->network.num_universes){
+								printf("ignored\n");
+							}
+						}
+						else{
+							printf("rejected\n");
+						}
+					}
+					else{
+						printf("Short read on ArtOutput packet\n");
+					}
+					break;
+				default:
+					printf("Unhandled ArtNet opcode %04X\n", hdr->opcode);
+					break;
+			}
+		}
+	}
+	return 1;
+}
 
 int network_handle(config_t* cfg){
 	int rv = 0;
-	uint8_t data[ARTNET_BUFFER_LENGTH];
-	size_t u;
+	uint8_t data[RECV_BUFFER];
 	ssize_t bytes_read;
-	artnet_header* hdr;
-	artnet_output_pkt* output;
 
 	do{
 		bytes_read = recvfrom(cfg->network.fd, &data, sizeof(data), MSG_DONTWAIT, NULL, NULL);
 
-		if(bytes_read > 0 && bytes_read > sizeof(artnet_header)){
-			//cast to header
-			hdr = (artnet_header*) data;
-
-			if(!memcmp(hdr->magic, "Art-Net\0", sizeof(hdr->magic))){
-				switch(hdr->opcode){
-					case OpDmx:
-						if(bytes_read > sizeof(artnet_header) + sizeof(artnet_output_pkt)){
-							//convert data
-							output = (artnet_output_pkt*) (data + sizeof(artnet_header));
-							output->length = be16toh(output->length);
-
-							printf("Sequence %u for net %u universe %u, %u bytes -> ", output->sequence, output->net, output->universe, output->length);
-							if(cfg->network.net == output->net && bytes_read == sizeof(artnet_header) + sizeof(artnet_output_pkt) + output->length){
-								//find matching universe
-								for(u = 0; u < cfg->network.num_universes; u++){
-									if(cfg->network.universes[u].ident == output->universe){
-										memcpy(cfg->network.universes[u].data, data + sizeof(artnet_header) + sizeof(artnet_output_pkt), min(512, output->length));
-										printf("accepted\n");
-										rv = 1;
-										break;
-									}
-								}
-								if(u == cfg->network.num_universes){
-									printf("ignored\n");
-								}
-							}
-							else{
-								printf("rejected\n");
-							}
-						}
-						else{
-							printf("Short read on ArtOutput packet\n");
-						}
-						break;
-					default:
-						printf("Unhandled ArtNet opcode %04X\n", hdr->opcode);
-						break;
-				}
+		if(bytes_read > 0){
+			switch(cfg->network.type){
+				case input_artnet:
+					rv |= network_handle_artnet(cfg, data, bytes_read);
+					break;
+				case input_sacn:
+					rv |= network_handle_sacn(cfg, data, bytes_read);
+					break;
+				default:
+					printf("Unknown protocol handler\n");
+					return -1;
 			}
 		}
 	} while(bytes_read >= 0);

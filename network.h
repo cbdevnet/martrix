@@ -1,7 +1,15 @@
 #include "martrix.h"
 
+#define RECV_BUFFER 4096
+
 #define SACN_DEFAULT_PORT "5568"
+#define SACN_MAGIC "ASC-E1.17\0\0\0"
+#define SACN_ROOT_DATA 0x4
+#define SACN_FRAME_DATA 0x2
+#define SACN_DMP_SET 0x2
+
 #define ARTNET_DEFAULT_PORT "6454"
+#define ARTNET_MAGIC "Art-Net\0"
 
 #pragma pack(push, 1)
 typedef struct /*_artnet_pkt_header*/ {
@@ -44,7 +52,6 @@ typedef struct /*_sacn_frame_data*/ {
 	uint16_t startcode_offset;
 	uint16_t address_increment;
 	uint16_t channels;
-	uint8_t data[513];
 } sacn_data;
 #pragma pack(pop)
 
