@@ -34,13 +34,13 @@ static int network_handle_sacn(config_t* cfg, uint8_t* data, size_t len){
 
 				//terminate source name
 				frame->source_name[63] = 0;
-				printf("Sequence %u from %s for universe %u, %u channels ->", frame->sequence, frame->source_name, be16toh(frame->universe), be16toh(frame->channels) - 1);
+				printf("Sequence %u from %s for universe %u, %u channels -> ", frame->sequence, frame->source_name, be16toh(frame->universe), be16toh(frame->channels) - 1);
 				if(len == sizeof(sacn_header) + sizeof(sacn_data) + be16toh(frame->channels)){
 					for(u = 0; u < cfg->network.num_universes; u++){
 						if(cfg->network.universes[u].ident == be16toh(frame->universe)){
 							memcpy(cfg->network.universes[u].data, data + sizeof(sacn_header) + sizeof(sacn_data) + 1, be16toh(frame->channels) - 1);
 							printf("accepted\n");
-							return 0;
+							return 1;
 						}
 					}
 
@@ -58,7 +58,7 @@ static int network_handle_sacn(config_t* cfg, uint8_t* data, size_t len){
 		}
 	}
 
-	return 1;
+	return 0;
 }
 
 static int network_handle_artnet(config_t* cfg, uint8_t* data, size_t len){
@@ -82,7 +82,7 @@ static int network_handle_artnet(config_t* cfg, uint8_t* data, size_t len){
 								if(cfg->network.universes[u].ident == output->universe){
 									memcpy(cfg->network.universes[u].data, data + sizeof(artnet_header) + sizeof(artnet_output_pkt), min(512, output->length));
 									printf("accepted\n");
-									return 0;
+									return 1;
 								}
 							}
 
@@ -104,7 +104,7 @@ static int network_handle_artnet(config_t* cfg, uint8_t* data, size_t len){
 			}
 		}
 	}
-	return 1;
+	return 0;
 }
 
 int network_handle(config_t* cfg){
