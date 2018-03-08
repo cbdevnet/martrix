@@ -49,6 +49,8 @@ A configuration file may consist of the following sections:
 Lines starting with a semicolon are treated as comments and ignored. There is currently no
 support for inline comments.
 
+Note that sACN reserves universe 0. When using sACN, start with universe 1.
+
 ## Usage
 
 Run `./martrix` to start the visualizer. The first and only accepted parameter

@@ -12,7 +12,7 @@ void signal_handler(int signum){
 }
 
 int usage(char* fn){
-	printf("martrix - Lighting grid/matrix visualizer\n");
+	printf("\nmartrix - Lighting grid/matrix visualizer\n");
 	printf("Controlled by input via sACN or ArtNet\n");
 	printf("Usage:\n\t%s <configfile>\n", fn);
 	return EXIT_FAILURE;
