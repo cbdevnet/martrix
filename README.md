@@ -44,7 +44,7 @@ A configuration file may consist of the following sections:
 		* `green` : Green color component
 		* `blue` : Blue color component
 		* `white` : Value for all three color components
-		* `strobe` : Currently unused
+		* `strobe` : Strobe/Shutter channel (0 - open, 1 - 255 increasing strobe frequency)
 		* `uv` : Currently unused
 
 * One `[map]` section, containing lines of the format
