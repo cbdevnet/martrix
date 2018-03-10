@@ -78,6 +78,7 @@ typedef struct /*_x11_data*/ {
 	Atom wm_delete;
 	unsigned width, height;
 	bool windowed;
+	uint8_t rerender_required;
 } x11_data_t;
 
 typedef struct /*_visualizer_config*/ {

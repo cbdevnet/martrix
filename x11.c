@@ -127,7 +127,7 @@ int x11_render(config_t* cfg){
 	size_t u, j;
 	input_universe_t* universe;
 	fixture_t* fix;
-	float dimming_factor = 1.0;
+	float dimming_factor = 1.0, strobe_factor = 1.0;
 	XRenderColor color = {
 		.alpha = -1
 	};
@@ -154,9 +154,18 @@ int x11_render(config_t* cfg){
 			}
 
 			//calculate color
+			dimming_factor = strobe_factor = 1.0;
 			color.red = color.green = color.blue = 0;
 			for(j = 0; j < cfg->visualizer.types[fix->type].channels; j++){
 				switch(cfg->visualizer.types[fix->type].map[j]){
+					case strobe:
+						if(universe->data[fix->addr + j] > 0){
+							cfg->xres.rerender_required = 1;
+							//time % offtime > ontime
+							//FIXME this calculation might need to be tuned somewhat
+							strobe_factor = ((cfg->last_render.tv_nsec % (long)(1e9 / (universe->data[fix->addr + j] / 4))) > (100e6 - ((double)universe->data[fix->addr + j] / 255.0) * 99e6)) ? 0 : 1.0;
+						}
+						break;
 					case dimmer:
 						dimming_factor = universe->data[fix->addr + j] / 255.f;
 						break;
@@ -180,6 +189,7 @@ int x11_render(config_t* cfg){
 				}
 			}
 
+			dimming_factor *= strobe_factor;
 			color.red *= dimming_factor;
 			color.green *= dimming_factor;
 			color.blue *= dimming_factor;

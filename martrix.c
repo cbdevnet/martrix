@@ -34,15 +34,19 @@ void martrix(config_t* cfg){
 			break;
 		}
 
-		if(status){
+		if(status || cfg->xres.rerender_required){
+			cfg->xres.rerender_required = 0;
 			x11_render(cfg);
+			if(clock_gettime(CLOCK_MONOTONIC_RAW, &cfg->last_render)){
+				perror("clock_gettime");
+			}
 		}
 
 		XFlush(cfg->xres.display);
 
 		FD_ZERO(&read_fds);
 		tv.tv_sec = 0;
-		tv.tv_usec = 1000;
+		tv.tv_usec = 10000;
 
 		maxfd = cfg->network.fd;
 		FD_SET(cfg->network.fd, &read_fds);
