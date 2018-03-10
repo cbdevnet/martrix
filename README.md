@@ -5,6 +5,10 @@ It can be used to plan shows or to create an interesting fixture using a
 standard computer projector. Data input is accepted via ArtNet or sACN,
 either of which is output by most lighting desks and software.
 
+Example with an 8 by 8 matrix and 3 basic effects from a lighting console:
+
+![martrix 8 by 8 grid demo](https://raw.githubusercontent.com/cbdevnet/martrix/assets/assets/8by8-2sec.gif "martrix demo with an 8 by 8 RGB grid")
+
 ## Build prerequisites
 
 martrix uses the X11 Xrender extension and thus requires the following packages:
