@@ -34,21 +34,25 @@ static int network_handle_sacn(config_t* cfg, uint8_t* data, size_t len){
 
 				//terminate source name
 				frame->source_name[63] = 0;
-				printf("Sequence %u from %s for universe %u, %u channels -> ", frame->sequence, frame->source_name, be16toh(frame->universe), be16toh(frame->channels) - 1);
+				if(cfg->network.verbose > 0){
+					printf("Sequence %u from %s for universe %u, %u channels -> ", frame->sequence, frame->source_name, be16toh(frame->universe), be16toh(frame->channels) - 1);
+				}
 				if(len == sizeof(sacn_header) + sizeof(sacn_data) + be16toh(frame->channels)){
 					for(u = 0; u < cfg->network.num_universes; u++){
 						if(cfg->network.universes[u].ident == be16toh(frame->universe)){
 							memcpy(cfg->network.universes[u].data, data + sizeof(sacn_header) + sizeof(sacn_data) + 1, be16toh(frame->channels) - 1);
-							printf("accepted\n");
+							if(cfg->network.verbose > 0){
+								printf("accepted\n");
+							}
 							return 1;
 						}
 					}
 
-					if(u == cfg->network.num_universes){
+					if(u == cfg->network.num_universes && cfg->network.verbose > 0){
 						printf("ignored\n");
 					}
 				}
-				else{
+				else if(cfg->network.verbose > 0){
 					printf("rejected\n");
 				}
 			}
@@ -75,22 +79,26 @@ static int network_handle_artnet(config_t* cfg, uint8_t* data, size_t len){
 						output = (artnet_output_pkt*) (data + sizeof(artnet_header));
 						output->length = be16toh(output->length);
 
-						printf("Sequence %u for net %u universe %u, %u bytes -> ", output->sequence, output->net, output->universe, output->length);
+						if(cfg->network.verbose > 0){
+							printf("Sequence %u for net %u universe %u, %u bytes -> ", output->sequence, output->net, output->universe, output->length);
+						}
 						if(cfg->network.net == output->net && len == sizeof(artnet_header) + sizeof(artnet_output_pkt) + output->length){
 							//find matching universe
 							for(u = 0; u < cfg->network.num_universes; u++){
 								if(cfg->network.universes[u].ident == output->universe){
 									memcpy(cfg->network.universes[u].data, data + sizeof(artnet_header) + sizeof(artnet_output_pkt), min(512, output->length));
-									printf("accepted\n");
+									if(cfg->network.verbose > 0){
+										printf("accepted\n");
+									}
 									return 1;
 								}
 							}
 
-							if(u == cfg->network.num_universes){
+							if(u == cfg->network.num_universes && cfg->network.verbose > 0){
 								printf("ignored\n");
 							}
 						}
-						else{
+						else if(cfg->network.verbose > 0){
 							printf("rejected\n");
 						}
 					}

@@ -78,7 +78,8 @@ void martrix(config_t* cfg){
 
 int main(int argc, char** argv){
 	config_t conf = {
-		.network.fd = -1
+		.network.fd = -1,
+		.network.verbose = 1
 	};
 	char* config_file = "martrix.cfg";
 	if(argc > 1){

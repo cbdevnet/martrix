@@ -36,6 +36,7 @@ A configuration file may consist of the following sections:
 	* `dimensions = <x>x<y>`: The dimensions of the visualizer grid
 	* `net = <artnet net id>`: The ArtNet network number to listen for, ignored with sACN
 	* `window = <x>x<y>`: Dimensions of the window to create - fullscreen if omitted
+	* `verbose = <level>`: Set to 0 to disable verbose output - defaults to 1
 * One or more `[fixture <name>]` sections, specifying a fixture type with:
 	* `channels = <num channels>`: Specify the number of channels this fixture uses
 	* Any number of `<channel type> = <channel offset>` lines, where *channel type* is one of
