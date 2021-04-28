@@ -65,6 +65,7 @@ typedef struct /*_input_data*/ {
 	input_type_t type;
 	char* bindhost;
 	int fd;
+	uint8_t verbose;
 } input_t;
 
 typedef struct /*_x11_data*/ {

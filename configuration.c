@@ -9,6 +9,17 @@ static enum {
 	config_map
 } parser_state = config_none;
 
+static char* fixture_channel_name[channel_max] = {
+	[ignore] = "ignore",
+	[dimmer] = "dimmer",
+	[strobe] = "strobe",
+	[red] = "red",
+	[green] = "green",
+	[blue] = "blue",
+	[white] = "white",
+	[uv] = "uv"
+};
+
 static unsigned dimensions_first(char* dims){
 	return strtoul(dims, NULL, 10);
 }
@@ -112,6 +123,10 @@ static int config_line(config_t* cfg, char* option, char* value){
 					printf("Failed to allocate memory\n");
 					return 1;
 				}
+			}
+			//verbose output
+			else if(!strncmp(option, "verbose", 7)){
+				cfg->network.verbose = strtoul(value, NULL, 10);
 			}
 			break;
 		case config_map:
